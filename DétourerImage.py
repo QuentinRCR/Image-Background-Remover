@@ -74,6 +74,7 @@ file_list_column = [
         sg.ColorChooserButton("New color")
     ],
     [
+        sg.Text("Marge"),
         sg.Slider((0, 250), 15, 1, 50, 'horizontal', False, key="-MARGIN-")
     ],
     [
