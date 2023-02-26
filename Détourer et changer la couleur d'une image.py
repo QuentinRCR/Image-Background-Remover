@@ -14,12 +14,6 @@ def removeBackground(opacity, colorToRemove, colorToAdd, path, margin):
     windowsPath = path[2:]  # jpg ou png
     # changer les / par des / avec ctrl+r
 
-    if type(colorToRemove) is str:
-        colorToRemove = hex_to_rgb(colorToRemove)
-
-    if type(colorToAdd) is str:
-        colorToAdd = hex_to_rgb(colorToAdd)
-
     colorToAdd.append(int(opacity * 255))  # to add the opacity component to the rgb form
 
     img = Image.open(windowsPath)
@@ -41,6 +35,15 @@ def removeBackground(opacity, colorToRemove, colorToAdd, path, margin):
 
     rgba.save(windowsPath[:-4] + "-modified.png", "PNG")
 
+def removeTemporaryFiles():
+    try:  # delete temporaries files
+        os.remove(folderPath + "/temps.png")
+        os.remove(folderPath + "/temps1.png")
+    except:
+        pass
+
+
+folderPath = None
 
 file_list_column = [
     [
@@ -104,11 +107,12 @@ while True:
 
     # Folder name was filled in, make a list of files in the folder
     if event == "-FOLDER-":
-        folder = values["-FOLDER-"]
-        print(folder)
+        removeTemporaryFiles(); #every time we change folder
+
+        folderPath = values["-FOLDER-"]
         try:
             # Get list of files in folder
-            file_list = os.listdir(folder)
+            file_list = os.listdir(folderPath)
         except:
             file_list = []
 
@@ -116,7 +120,7 @@ while True:
         fnames = [
             f
             for f in file_list
-            if os.path.isfile(os.path.join(folder, f))
+            if os.path.isfile(os.path.join(folderPath, f))
             and f.lower().endswith((".png", ".gif", ".jpg", ".jpeg"))
         ]
         window["-FILE LIST-"].update(fnames)
@@ -126,7 +130,10 @@ while True:
             filename = os.path.join(
                 values["-FOLDER-"], values["-FILE LIST-"][0]
             )
-            window["-IMAGE-"].update(filename=filename)
+            img = Image.open(filename);
+            img.thumbnail((500, 500))
+            img.save(values["-FOLDER-"]+"/temps.png")
+            window["-IMAGE-"].update(filename=values["-FOLDER-"]+"/temps.png")
         except:
             pass
 
@@ -139,8 +146,13 @@ while True:
                          values["-MARGIN-"]
                          )
         filename = os.path.join(values["-FOLDER-"], values["-FILE LIST-"][0])[:-4] + "-modified.png"
-        window["-MODIFIED_IMAGE-"].update(filename=filename)
+        img1 = Image.open(filename)
+        img1.thumbnail((500, 500))
+        img1.save(values["-FOLDER-"] + "/temps2.png")
+        window["-MODIFIED_IMAGE-"].update(filename=values["-FOLDER-"] + "/temps2.png")
 
+
+removeTemporaryFiles()
 window.close()
 
 
