@@ -12,7 +12,12 @@ def hex_to_rgb(value):
 def removeBackground(opacity, colorToRemove, colorToAdd, path, margin):
 
     windowsPath = path[2:]  # jpg ou png
-    # changer les / par des / avec ctrl+r
+
+    if(colorToAdd==""):
+        colorToAdd="#ffffff" # in case the second color is not defined
+
+    colorToRemove = hex_to_rgb(colorToRemove)
+    colorToAdd = hex_to_rgb(colorToAdd)
 
     colorToAdd.append(int(opacity * 255))  # to add the opacity component to the rgb form
 
@@ -38,7 +43,7 @@ def removeBackground(opacity, colorToRemove, colorToAdd, path, margin):
 def removeTemporaryFiles():
     try:  # delete temporaries files
         os.remove(folderPath + "/temps.png")
-        os.remove(folderPath + "/temps1.png")
+        os.remove(folderPath + "/temps2.png")
     except:
         pass
 
@@ -80,6 +85,7 @@ file_list_column = [
 # For now will only show the name of the file that was chosen
 image_viewer_column = [
     [sg.Image(key="-MODIFIED_IMAGE-")],
+    [sg.HSeparator()],
     [sg.Image(key="-IMAGE-")]
 
 ]
