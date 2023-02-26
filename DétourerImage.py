@@ -47,16 +47,17 @@ def removeTemporaryFiles():
     except:
         pass
 
-
+# define the path to the image displayed
 folderPath = None
 
+# defines the elements that goes on the left of the window
 file_list_column = [
-    [
+    [ #select the folder
         sg.Text("Image Folder"),
         sg.In(size=(25, 1), enable_events=True, key="-FOLDER-"),
         sg.FolderBrowse(),
     ],
-    [
+    [ #displays the image elements inside the folder
         sg.Listbox(
             values=[], enable_events=True, size=(70, 30), key="-FILE LIST-"
         )
@@ -65,16 +66,16 @@ file_list_column = [
         sg.Text("Chose opacity of the final replaced pixels"),
         sg.Slider((0, 1), 0, 0.01, 0.5, 'horizontal', False, size=(20, 10), key="-OPACITY-", enable_events=True)
     ],
-    [
+    [ #choose the color that need to be removed
         sg.Input(key="-REMOVE_COLOR-"),
         sg.ColorChooserButton("Removed color")
     ],
-    [
+    [ #chose the color to replace the missing pixels
         sg.Input(key="-NEW_COLOR-"),
         sg.ColorChooserButton("New color")
     ],
-    [
-        sg.Text("Marge"),
+    [ #defines the margin to get all the pixels
+        sg.Text("Margin"),
         sg.Slider((0, 250), 15, 1, 50, 'horizontal', False, key="-MARGIN-")
     ],
     [
@@ -83,16 +84,16 @@ file_list_column = [
 ]
 
 
-# For now will only show the name of the file that was chosen
+# Defines images on the right
 image_viewer_column = [
-    [sg.Image(key="-MODIFIED_IMAGE-")],
+    [sg.Image(key="-MODIFIED_IMAGE-")], #displays the modified image
     [sg.HSeparator()],
     [sg.Image(key="-IMAGE-")]
 
 ]
 
 
-# ----- Full layout -----
+# Defines the full layout
 layout = [
     [
         sg.Column(file_list_column),
@@ -101,20 +102,22 @@ layout = [
     ]
 ]
 
-
+# Opens the window
 window = sg.Window("Background remover", layout)
 
 
 # Run the Event Loop
 while True:
+    # reads if there is any new event
     event, values = window.read()
 
+    #if the window is closed, break the loop
     if event == "Exit" or event == sg.WIN_CLOSED:
         break
 
-    # Folder name was filled in, make a list of files in the folder
+    # Folder name was chosen, make a list of files in the folder
     if event == "-FOLDER-":
-        removeTemporaryFiles() #every time we change folder
+        removeTemporaryFiles() #To avoid leaving temporarily files if we change folder without quiting the app
 
         folderPath = values["-FOLDER-"]
 
@@ -126,23 +129,29 @@ while True:
             f
             for f in file_list
             if os.path.isfile(os.path.join(folderPath, f))
-            and f.lower().endswith((".png", ".gif", ".jpg", ".jpeg"))
+            and f.lower().endswith((".png", ".jpg", ".jpeg"))
         ]
         window["-FILE LIST-"].update(imageFiles)
 
-    elif event == "-FILE LIST-":  # A file was chosen from the listbox
+    # A file was chosen from the listbox
+    elif event == "-FILE LIST-":
         try:
             filename = os.path.join(
                 values["-FOLDER-"], values["-FILE LIST-"][0]
             )
+
+            # Resize the image to have a constant window and change the file
+            # from jpg to png so that the image is displayed
             img = Image.open(filename)
             img.thumbnail((500, 500))
             img.save(values["-FOLDER-"]+"/temps.png")
+
+            #update the value of the image
             window["-IMAGE-"].update(filename=values["-FOLDER-"]+"/temps.png")
         except:
             pass
 
-    # call the function when push execute
+    # call the function when button execute is pressed
     elif event == "Execute":
         removeBackground(values["-OPACITY-"],
                          values["-REMOVE_COLOR-"],
@@ -150,14 +159,21 @@ while True:
                          os.path.join(values["-FOLDER-"], values["-FILE LIST-"][0]),
                          values["-MARGIN-"]
                          )
+
+
         filename = os.path.join(values["-FOLDER-"], values["-FILE LIST-"][0])[:-4] + "-modified.png"
+
+        # Resize the image to have a constant window and change the file
+        # from jpg to png so that the image is displayed
         img1 = Image.open(filename)
         img1.thumbnail((500, 500))
         img1.save(values["-FOLDER-"] + "/temps2.png")
+
+        #update the result image know what the image looks like
         window["-MODIFIED_IMAGE-"].update(filename=values["-FOLDER-"] + "/temps2.png")
 
 
-removeTemporaryFiles()
+removeTemporaryFiles() #to remove temp files before closing the window
 window.close()
 
 
