@@ -76,7 +76,9 @@ file_list_column = [
 
 # For now will only show the name of the file that was chosen
 image_viewer_column = [
+    [sg.Image(key="-MODIFIED_IMAGE-")],
     [sg.Image(key="-IMAGE-")]
+
 ]
 
 
@@ -124,7 +126,6 @@ while True:
             filename = os.path.join(
                 values["-FOLDER-"], values["-FILE LIST-"][0]
             )
-
             window["-IMAGE-"].update(filename=filename)
         except:
             pass
@@ -137,6 +138,8 @@ while True:
                          os.path.join(values["-FOLDER-"], values["-FILE LIST-"][0]),
                          values["-MARGIN-"]
                          )
+        filename = os.path.join(values["-FOLDER-"], values["-FILE LIST-"][0])[:-4] + "-modified.png"
+        window["-MODIFIED_IMAGE-"].update(filename=filename)
 
 window.close()
 
