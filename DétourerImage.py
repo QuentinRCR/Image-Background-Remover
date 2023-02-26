@@ -19,11 +19,11 @@ def removeBackground(opacity, colorToRemove, colorToAdd, path, margin):
     colorToRemove = hex_to_rgb(colorToRemove)
     colorToAdd = hex_to_rgb(colorToAdd)
 
-    colorToAdd.append(int(opacity * 255))  # to add the opacity component to the rgb form
+    colorToAdd.append(int(opacity * 255))  #to add the opacity component to the rgb form
 
-    img = Image.open(windowsPath)
+    imgToConvert = Image.open(windowsPath)
 
-    rgba = img.convert("RGBA")
+    rgba = imgToConvert.convert("RGBA")
 
     datas = rgba.getdata()
     newData = []
@@ -114,30 +114,28 @@ while True:
 
     # Folder name was filled in, make a list of files in the folder
     if event == "-FOLDER-":
-        removeTemporaryFiles(); #every time we change folder
+        removeTemporaryFiles() #every time we change folder
 
         folderPath = values["-FOLDER-"]
-        try:
-            # Get list of files in folder
-            file_list = os.listdir(folderPath)
-        except:
-            file_list = []
+
+        # Get list of files in folder
+        file_list = os.listdir(folderPath)
 
         # Remove all not wanted extension with a comprehension for
-        fnames = [
+        imageFiles = [
             f
             for f in file_list
             if os.path.isfile(os.path.join(folderPath, f))
             and f.lower().endswith((".png", ".gif", ".jpg", ".jpeg"))
         ]
-        window["-FILE LIST-"].update(fnames)
+        window["-FILE LIST-"].update(imageFiles)
 
     elif event == "-FILE LIST-":  # A file was chosen from the listbox
         try:
             filename = os.path.join(
                 values["-FOLDER-"], values["-FILE LIST-"][0]
             )
-            img = Image.open(filename);
+            img = Image.open(filename)
             img.thumbnail((500, 500))
             img.save(values["-FOLDER-"]+"/temps.png")
             window["-IMAGE-"].update(filename=values["-FOLDER-"]+"/temps.png")
