@@ -49,6 +49,21 @@ def removeTemporaryFiles():
     except:
         pass
 
+def update_image_list():
+    removeTemporaryFiles() #To avoid leaving temporarily files if we change folder without quiting the app
+
+    # Get list of files in folder
+    file_list = os.listdir(folderPath)
+
+    # Remove all not wanted extension with a comprehension for
+    imageFiles = [
+        f
+        for f in file_list
+        if os.path.isfile(os.path.join(folderPath, f))
+        and f.lower().endswith((".png", ".jpg", ".jpeg"))
+    ]
+    window["-FILE LIST-"].update(imageFiles)
+
 # define the path to the image displayed
 folderPath = None
 
@@ -104,6 +119,7 @@ layout = [
     ]
 ]
 
+
 # Opens the window
 window = sg.Window("Background remover", layout)
 
@@ -119,21 +135,8 @@ while True:
 
     # Folder name was chosen, make a list of files in the folder
     if event == "-FOLDER-":
-        removeTemporaryFiles() #To avoid leaving temporarily files if we change folder without quiting the app
-
         folderPath = values["-FOLDER-"]
-
-        # Get list of files in folder
-        file_list = os.listdir(folderPath)
-
-        # Remove all not wanted extension with a comprehension for
-        imageFiles = [
-            f
-            for f in file_list
-            if os.path.isfile(os.path.join(folderPath, f))
-            and f.lower().endswith((".png", ".jpg", ".jpeg"))
-        ]
-        window["-FILE LIST-"].update(imageFiles)
+        update_image_list()
 
     # A file was chosen from the listbox
     elif event == "-FILE LIST-":
@@ -171,8 +174,10 @@ while True:
         img1.thumbnail((500, 500))
         img1.save(values["-FOLDER-"] + "/temps2.png")
 
-        #update the result image know what the image looks like
+        #update the result image to know what the image looks like
         window["-MODIFIED_IMAGE-"].update(filename=values["-FOLDER-"] + "/temps2.png")
+
+        update_image_list()
 
 
 removeTemporaryFiles() #to remove temp files before closing the window
