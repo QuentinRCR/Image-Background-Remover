@@ -16,6 +16,9 @@ def removeBackground(opacity, colorToRemove, colorToAdd, path, margin):
     if(colorToAdd==""):
         colorToAdd="#ffffff" # in case the second color is not defined
 
+    if(colorToRemove==""):
+        colorToRemove="#f7f7f7" # in case the second color is not defined
+
     colorToRemove = hex_to_rgb(colorToRemove)
     colorToAdd = hex_to_rgb(colorToAdd)
 
