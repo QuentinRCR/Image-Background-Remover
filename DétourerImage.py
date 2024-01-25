@@ -1,6 +1,8 @@
 from PIL import Image
 import PySimpleGUI as sg
 import os.path
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 def hex_to_rgb(value):
@@ -15,32 +17,29 @@ def removeBackground(opacity, colorToRemove, colorToAdd, path, margin):
 
     if(colorToAdd==""):
         colorToAdd="#ffffff" # in case the second color is not defined
-
     if(colorToRemove==""):
         colorToRemove="#f7f7f7" # in case the second color is not defined
-
     colorToRemove = hex_to_rgb(colorToRemove)
     colorToAdd = hex_to_rgb(colorToAdd)
-
     colorToAdd.append(int(opacity * 255))  #to add the opacity component to the rgb form
 
     imgToConvert = Image.open(windowsPath)
+    rgba = imgToConvert.convert("RGBA") # convert any format to rbga
 
-    rgba = imgToConvert.convert("RGBA")
+    img_array = np.array(rgba)
 
-    datas = rgba.getdata()
-    newData = []
+    # Calculate the absolute difference between the image array and the target color
+    color_difference = np.abs(img_array[..., :3] - colorToRemove)
 
-    for image in datas:
-        if ((image[0] >= colorToRemove[0] - margin) and (image[0] <= colorToRemove[0] + margin) and (
-                image[1] >= colorToRemove[1] - margin) and (image[1] <= colorToRemove[1] + margin) and (
-                image[2] >= colorToRemove[2] - margin) and (image[2] <= colorToRemove[2] + margin)):
-            newData.append((colorToAdd[0], colorToAdd[1], colorToAdd[2], colorToAdd[3]))
-        else:
-            newData.append(image)
+    # Create a mask for the target color within the tolerance range
+    mask = np.all(color_difference <= margin, axis=-1)
 
-    rgba.putdata(newData)
+    #update the color
+    img_array[mask] = colorToAdd
 
+    rgba = Image.fromarray(img_array)
+
+    # save the new version
     rgba.save(windowsPath[:-4] + "-modified.png", "PNG")
 
 def removeTemporaryFiles():
