@@ -55,6 +55,9 @@ def update_image_list():
     # Get list of files in folder
     file_list = os.listdir(folderPath)
 
+    if(folderPath.split("/")[-1]=="Screenshots"):
+        file_list.sort(reverse=True) # sort by most recent if it is screenshots
+
     # Remove all not wanted extension with a comprehension for
     imageFiles = [
         f
