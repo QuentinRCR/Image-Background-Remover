@@ -45,7 +45,7 @@ def removeTemporaryFiles():
     except:
         pass
 
-def update_image_list():
+def update_image_list(selected_image_name = None):
     removeTemporaryFiles() #To avoid leaving temporarily files if we change folder without quitting the app
 
     # Get list of files in folder
@@ -62,6 +62,13 @@ def update_image_list():
         and f.lower().endswith((".png", ".jpg", ".jpeg"))
     ]
     window["-FILE LIST-"].update(imageFiles)
+    
+    if selected_image_name: # force the correct element to remain highlighted
+        window["-FILE LIST-"].set_value(selected_image_name)
+
+
+def get_selected_image_path():
+    return os.path.join(values["-FOLDER-"], values["-FILE LIST-"][0])
 
 # define the path to the image displayed
 folderPath = None
@@ -118,9 +125,11 @@ layout = [
     ]
 ]
 
+last_selected_image_path = "" # save the last modified image
 
 # Opens the window
 window = sg.Window("Background remover", layout)
+
 
 
 # Run the Event Loop
@@ -140,13 +149,9 @@ while True:
     # A file was chosen from the listbox
     elif event == "-FILE LIST-":
         try:
-            filename = os.path.join(
-                values["-FOLDER-"], values["-FILE LIST-"][0]
-            )
-
             # Resize the image to have a constant window and change the file
             # from jpg to png so that the image is displayed
-            img = Image.open(filename)
+            img = Image.open(get_selected_image_path())
             img.thumbnail((500, 500))
             img.save(values["-FOLDER-"]+"/temps.png")
 
@@ -157,15 +162,18 @@ while True:
 
     # call the function when button execute is pressed
     elif event == "Execute":
+        image_path = get_selected_image_path()
+
         removeBackground(values["-OPACITY-"],
                          values["-REMOVE_COLOR-"],
                          values["-NEW_COLOR-"],
-                         os.path.join(values["-FOLDER-"], values["-FILE LIST-"][0]),
+                         image_path,
                          values["-MARGIN-"]
                          )
 
+        print( values["-FILE LIST-"])
 
-        filename = os.path.join(values["-FOLDER-"], values["-FILE LIST-"][0])[:-4] + "-modified.png"
+        filename = image_path[:-4] + "-modified.png"
 
         # Resize the image to have a constant window and change the file
         # from jpg to png so that the image is displayed
@@ -176,7 +184,7 @@ while True:
         #update the result image to know what the image looks like
         window["-MODIFIED_IMAGE-"].update(filename=values["-FOLDER-"] + "/temps2.png")
 
-        update_image_list()
+        update_image_list(selected_image_name=values["-FILE LIST-"])
 
 
 removeTemporaryFiles() #to remove temp files before closing the window
