@@ -1,193 +1,139 @@
+import os
+import numpy as np
 from PIL import Image
 import PySimpleGUI as sg
-import os.path
-import numpy as np
-import matplotlib.pyplot as plt
 
-
+# Convert hex color code to RGB format
 def hex_to_rgb(value):
     value = value.lstrip('#')
-    lv = len(value)
-    return list(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
+    return [int(value[i:i + len(value) // 3], 16) for i in range(0, len(value), len(value) // 3)]
 
+# Function to remove the background color and replace it with a new color with specified opacity
+def remove_background(opacity, color_to_remove, color_to_add, path, margin):
+    # Convert hex colors to RGB and add opacity to the new color
+    color_to_remove = hex_to_rgb(color_to_remove)
+    color_to_add = hex_to_rgb(color_to_add) + [int(opacity * 255)]
 
-def removeBackground(opacity, colorToRemove, colorToAdd, path, margin):
+    # Open the image and convert to RGBA
+    img = Image.open(path[2:]).convert("RGBA")
+    img_array = np.array(img)
 
-    windowsPath = path[2:]  # jpg ou png
+    # Calculate color difference and create a mask based on margin
+    color_diff = np.abs(img_array[..., :3] - color_to_remove)
+    mask = np.all(color_diff <= margin, axis=-1)
 
-    colorToRemove = hex_to_rgb(colorToRemove)
-    colorToAdd = hex_to_rgb(colorToAdd)
-    colorToAdd.append(int(opacity * 255))  #to add the opacity component to the rgb form
+    # Apply the new color to the masked pixels
+    img_array[mask] = color_to_add
 
-    imgToConvert = Image.open(windowsPath)
-    rgba = imgToConvert.convert("RGBA") # convert any format to rbga
+    # Save the modified image as a PNG
+    Image.fromarray(img_array).save(path[:-4] + "-modified.png", "PNG")
 
-    img_array = np.array(rgba)
+# Function to remove temporary files generated during processing
+def remove_temp_files():
+    # List of temporary files to remove
+    for temp_file in ["temps.png", "temps2.png"]:
+        try:
+            os.remove(os.path.join(values["-FOLDER-"], temp_file))
+        except FileNotFoundError:
+            pass
 
-    # Calculate the absolute difference between the image array and the target color
-    color_difference = np.abs(img_array[..., :3] - colorToRemove)
+# Function to update the list of image files in the folder
+def update_image_list(selected_image=None):
+    remove_temp_files()  # Clean up temp files before updating list
 
-    # Create a mask for the target color within the tolerance range
-    mask = np.all(color_difference <= margin, axis=-1)
-
-    #update the color
-    img_array[mask] = colorToAdd
-
-    rgba = Image.fromarray(img_array)
-
-    # save the new version
-    rgba.save(windowsPath[:-4] + "-modified.png", "PNG")
-
-def removeTemporaryFiles():
-    try:  # delete temporaries files
-        os.remove(folderPath + "/temps.png")
-        os.remove(folderPath + "/temps2.png")
-    except:
-        pass
-
-def update_image_list(selected_image_name = None):
-    removeTemporaryFiles() #To avoid leaving temporarily files if we change folder without quitting the app
-
-    # Get list of files in folder
-    file_list = os.listdir(folderPath)
-
-    if(os.path.basename(folderPath)=="Screenshots"):
-        file_list.sort(reverse=True) # sort by most recent if it is screenshots
-
-    # Remove all not wanted extension with a comprehension for
-    imageFiles = [
-        f
-        for f in file_list
-        if os.path.isfile(os.path.join(folderPath, f))
-        and f.lower().endswith((".png", ".jpg", ".jpeg"))
+    # Get and filter list of image files in the folder
+    image_files = [
+        f for f in sorted(os.listdir(values["-FOLDER-"]), reverse=os.path.basename(values["-FOLDER-"]) == "Screenshots")
+        if os.path.isfile(os.path.join(values["-FOLDER-"], f)) and f.lower().endswith((".png", ".jpg", ".jpeg"))
     ]
-    window["-FILE LIST-"].update(imageFiles)
-    
-    if selected_image_name: # force the correct element to remain highlighted
-        window["-FILE LIST-"].set_value(selected_image_name)
 
+    # Update the listbox with the image files
+    window["-FILE LIST-"].update(image_files)
 
+    # If an image is selected, keep it highlighted
+    if selected_image:
+        window["-FILE LIST-"].set_value(selected_image)
+
+# Get the full path of the selected image
 def get_selected_image_path():
     return os.path.join(values["-FOLDER-"], values["-FILE LIST-"][0])
 
+# Get the default folder path for screenshots
 def get_screenshot_folder():
-    return  os.path.join(os.path.expanduser("~"),r'Pictures\Screenshots')
+    return os.path.join(os.path.expanduser("~"), r'Pictures\Screenshots')
 
-# define the path to the image displayed
-folderPath = get_screenshot_folder()
-
-# defines the elements that goes on the left of the window
-file_list_column = [
-    [ #select the folder
-        sg.Text("Image Folder"),
-        sg.In(size=(25, 1), enable_events=True, key="-FOLDER-",default_text=get_screenshot_folder()),
-        sg.FolderBrowse(),
-    ],
-    [ #displays the image elements inside the folder
-        sg.Listbox(
-            values=[], enable_events=True, size=(70, 30), key="-FILE LIST-"
-        )
-    ],
-    [
-        sg.Text("Chose opacity of the final replaced pixels"),
-        sg.Slider((0, 1), 0, 0.01, 0.5, 'horizontal', False, size=(20, 10), key="-OPACITY-", enable_events=True)
-    ],
-    [ #choose the color that need to be removed
-        sg.Input(key="-REMOVE_COLOR-",default_text='#f7f7f7'),
-        sg.ColorChooserButton("Removed color")
-    ],
-    [ #chose the color to replace the missing pixels
-        sg.Input(key="-NEW_COLOR-",default_text='#ffffff'),
-        sg.ColorChooserButton("New color")
-    ],
-    [ #defines the margin to get all the pixels
-        sg.Text("Margin"),
-        sg.Slider((0, 250), 15, 1, 50, 'horizontal', False, key="-MARGIN-")
-    ],
-    [
-        sg.Button("Execute")
+# Return the layout of the gui
+def get_layout(default_folder_path,default_remove_color,default_add_color,default_opacity,default_margin):
+    # Left-side column with folder selection and image list
+    file_list_column = [
+        [sg.Text("Image Folder"), sg.In(size=(25, 1), enable_events=True, key="-FOLDER-", default_text=default_folder_path), sg.FolderBrowse()],
+        [sg.Listbox(values=[], enable_events=True, size=(70, 30), key="-FILE LIST-")],
+        [sg.Text("Opacity"), sg.Slider((0, 1), default_opacity, 0.01, orientation='horizontal', key="-OPACITY-")],
+        [sg.Input(key="-REMOVE_COLOR-", default_text=default_remove_color), sg.ColorChooserButton("Removed color")],
+        [sg.Input(key="-NEW_COLOR-", default_text=default_add_color), sg.ColorChooserButton("New color")],
+        [sg.Text("Margin"), sg.Slider((0, 250), default_margin, 1, orientation='horizontal', key="-MARGIN-")],
+        [sg.Button("Execute")]
     ]
-]
 
-
-# Defines images on the right
-image_viewer_column = [
-    [sg.Image(key="-MODIFIED_IMAGE-")], #displays the modified image
-    [sg.HSeparator()],
-    [sg.Image(key="-IMAGE-")]
-
-]
-
-
-# Defines the full layout
-layout = [
-    [
-        sg.Column(file_list_column),
-        sg.VSeperator(),
-        sg.Column(image_viewer_column),
+    # Right-side column with image preview
+    image_viewer_column = [
+        [sg.Image(key="-MODIFIED_IMAGE-")],  # Display the modified image
+        [sg.HSeparator()],                   # Horizontal separator
+        [sg.Image(key="-IMAGE-")]            # Display the original image
     ]
-]
 
-last_selected_image_path = "" # save the last modified image
+    # Full window layout
+    layout = [
+        [sg.Column(file_list_column), sg.VSeperator(), sg.Column(image_viewer_column)]
+    ]
 
-# Opens the window
-window = sg.Window("Background remover", layout)
-window.read(timeout=0) # read to be able to manipulated for default behaviors 
-update_image_list()
-# Run the Event Loop
+    return layout
+
+
+
+# Initialize window
+layout = get_layout(get_screenshot_folder(),'#f7f7f7','#ffffff',0,15)
+window = sg.Window("Background Remover", layout)
+event, values = window.read(timeout=0)  # Initial read to handle default behaviors
+update_image_list() # Populate the image list at startup
+
+# Event loop to handle GUI interactions
 while True:
-    # reads if there is any new event
     event, values = window.read()
 
-    #if the window is closed, break the loop
-    if event == "Exit" or event == sg.WIN_CLOSED:
+    # Close the window if Exit or close button is pressed
+    if event in ("Exit", sg.WIN_CLOSED):
         break
 
-    # Folder name was chosen, make a list of files in the folder
+    # Update the folder path and image list if a new folder is selected
     if event == "-FOLDER-":
-        folderPath = values["-FOLDER-"]
         update_image_list()
 
-    # A file was chosen from the listbox
+    # Display the selected image in the image viewer
     elif event == "-FILE LIST-":
         try:
-            # Resize the image to have a constant window and change the file
-            # from jpg to png so that the image is displayed
             img = Image.open(get_selected_image_path())
-            img.thumbnail((500, 500))
-            img.save(values["-FOLDER-"]+"/temps.png")
-
-            #update the value of the image
-            window["-IMAGE-"].update(filename=values["-FOLDER-"]+"/temps.png")
+            img.thumbnail((500, 500))  # Resize image to fit
+            img.save(os.path.join(values["-FOLDER-"], "temps.png"))  # Save a temporary resized version
+            window["-IMAGE-"].update(filename=os.path.join(values["-FOLDER-"], "temps.png"))
         except:
             pass
 
-    # call the function when button execute is pressed
+    # Execute background removal when the button is clicked
     elif event == "Execute":
-        image_path = get_selected_image_path()
+        remove_background(
+            values["-OPACITY-"], values["-REMOVE_COLOR-"], values["-NEW_COLOR-"],
+            get_selected_image_path(), values["-MARGIN-"]
+        )
 
-        removeBackground(values["-OPACITY-"],
-                         values["-REMOVE_COLOR-"],
-                         values["-NEW_COLOR-"],
-                         image_path,
-                         values["-MARGIN-"]
-                         )
+        # Load and display the modified image
+        img1 = Image.open(get_selected_image_path()[:-4] + "-modified.png")
+        img1.thumbnail((500, 500))  # Resize the modified image
+        img1.save(os.path.join(values["-FOLDER-"], "temps2.png"))
+        window["-MODIFIED_IMAGE-"].update(filename=os.path.join(values["-FOLDER-"], "temps2.png"))
 
-        filename = image_path[:-4] + "-modified.png"
+        # Update the image list and keep the selected image highlighted
+        update_image_list(selected_image=values["-FILE LIST-"])
 
-        # Resize the image to have a constant window and change the file
-        # from jpg to png so that the image is displayed
-        img1 = Image.open(filename)
-        img1.thumbnail((500, 500))
-        img1.save(values["-FOLDER-"] + "/temps2.png")
-
-        #update the result image to know what the image looks like
-        window["-MODIFIED_IMAGE-"].update(filename=values["-FOLDER-"] + "/temps2.png")
-
-        update_image_list(selected_image_name=values["-FILE LIST-"])
-
-
-removeTemporaryFiles() #to remove temp files before closing the window
+# Clean up temp files and close the window when exiting
 window.close()
-
-
