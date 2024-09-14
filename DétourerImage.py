@@ -51,7 +51,7 @@ def update_image_list(selected_image_name = None):
     # Get list of files in folder
     file_list = os.listdir(folderPath)
 
-    if(folderPath.split("/")[-1]=="Screenshots"):
+    if(os.path.basename(folderPath)=="Screenshots"):
         file_list.sort(reverse=True) # sort by most recent if it is screenshots
 
     # Remove all not wanted extension with a comprehension for
@@ -70,14 +70,17 @@ def update_image_list(selected_image_name = None):
 def get_selected_image_path():
     return os.path.join(values["-FOLDER-"], values["-FILE LIST-"][0])
 
+def get_screenshot_folder():
+    return  os.path.join(os.path.expanduser("~"),r'Pictures\Screenshots')
+
 # define the path to the image displayed
-folderPath = None
+folderPath = get_screenshot_folder()
 
 # defines the elements that goes on the left of the window
 file_list_column = [
     [ #select the folder
         sg.Text("Image Folder"),
-        sg.In(size=(25, 1), enable_events=True, key="-FOLDER-"),
+        sg.In(size=(25, 1), enable_events=True, key="-FOLDER-",default_text=get_screenshot_folder()),
         sg.FolderBrowse(),
     ],
     [ #displays the image elements inside the folder
@@ -129,9 +132,8 @@ last_selected_image_path = "" # save the last modified image
 
 # Opens the window
 window = sg.Window("Background remover", layout)
-
-
-
+window.read(timeout=0) # read to be able to manipulated for default behaviors 
+update_image_list()
 # Run the Event Loop
 while True:
     # reads if there is any new event
@@ -170,8 +172,6 @@ while True:
                          image_path,
                          values["-MARGIN-"]
                          )
-
-        print( values["-FILE LIST-"])
 
         filename = image_path[:-4] + "-modified.png"
 
