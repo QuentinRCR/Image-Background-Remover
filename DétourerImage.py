@@ -15,10 +15,6 @@ def removeBackground(opacity, colorToRemove, colorToAdd, path, margin):
 
     windowsPath = path[2:]  # jpg ou png
 
-    if(colorToAdd==""):
-        colorToAdd="#ffffff" # in case the second color is not defined
-    if(colorToRemove==""):
-        colorToRemove="#f7f7f7" # in case the second color is not defined
     colorToRemove = hex_to_rgb(colorToRemove)
     colorToAdd = hex_to_rgb(colorToAdd)
     colorToAdd.append(int(opacity * 255))  #to add the opacity component to the rgb form
@@ -50,7 +46,7 @@ def removeTemporaryFiles():
         pass
 
 def update_image_list():
-    removeTemporaryFiles() #To avoid leaving temporarily files if we change folder without quiting the app
+    removeTemporaryFiles() #To avoid leaving temporarily files if we change folder without quitting the app
 
     # Get list of files in folder
     file_list = os.listdir(folderPath)
@@ -87,11 +83,11 @@ file_list_column = [
         sg.Slider((0, 1), 0, 0.01, 0.5, 'horizontal', False, size=(20, 10), key="-OPACITY-", enable_events=True)
     ],
     [ #choose the color that need to be removed
-        sg.Input(key="-REMOVE_COLOR-"),
+        sg.Input(key="-REMOVE_COLOR-",default_text='#f7f7f7'),
         sg.ColorChooserButton("Removed color")
     ],
     [ #chose the color to replace the missing pixels
-        sg.Input(key="-NEW_COLOR-"),
+        sg.Input(key="-NEW_COLOR-",default_text='#ffffff'),
         sg.ColorChooserButton("New color")
     ],
     [ #defines the margin to get all the pixels
