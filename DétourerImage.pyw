@@ -77,9 +77,9 @@ def get_layout(default_folder_path,default_remove_color,default_add_color,defaul
 
     # Right-side column with image preview
     image_viewer_column = [
-        [sg.Image(key="-MODIFIED_IMAGE-")],  # Display the modified image
+        [sg.Image(key="-MODIFIED_IMAGE-")], # Display the modified image
         [sg.HSeparator()],                   # Horizontal separator
-        [sg.Image(key="-IMAGE-")]            # Display the original image
+        [sg.Image(key="-IMAGE-",size=(400,400))] # Display the original image
     ]
 
     # Full window layout
@@ -89,11 +89,9 @@ def get_layout(default_folder_path,default_remove_color,default_add_color,defaul
 
     return layout
 
-
-
 # Initialize window
 layout = get_layout(get_screenshot_folder(),'#f7f7f7','#ffffff',0,15)
-window = sg.Window("Background Remover", layout, relative_location=(-200,-50))
+window = sg.Window("Background Remover", layout, relative_location=(0,-50),size=(1200,750))
 event, values = window.read(timeout=0)  # Initial read to handle default behaviors
 update_image_list() # Populate the image list at startup
 
@@ -113,9 +111,10 @@ while True:
     elif event == "-FILE LIST-":
         try:
             img = Image.open(get_selected_image_path())
-            img.thumbnail((500, 500))  # Resize image to fit
+            img.thumbnail((500, 350))  # Resize image to fit
             img.save(os.path.join(values["-FOLDER-"], "temps.png"))  # Save a temporary resized version
             window["-IMAGE-"].update(filename=os.path.join(values["-FOLDER-"], "temps.png"))
+            window["-MODIFIED_IMAGE-"].update(None) # reset the modified image
         except:
             pass
 
@@ -128,7 +127,7 @@ while True:
 
         # Load and display the modified image
         img1 = Image.open(get_selected_image_path()[:-4] + "-modified.png")
-        img1.thumbnail((500, 500))  # Resize the modified image
+        img1.thumbnail((500, 350))  # Resize the modified image
         img1.save(os.path.join(values["-FOLDER-"], "temps2.png"))
         window["-MODIFIED_IMAGE-"].update(filename=os.path.join(values["-FOLDER-"], "temps2.png"))
 
