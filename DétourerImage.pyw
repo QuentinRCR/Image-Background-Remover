@@ -1,7 +1,7 @@
 import os
 import numpy as np
 from PIL import Image
-import PySimpleGUI as sg
+import FreeSimpleGUI as sg
 
 # Convert hex color code to RGB format
 def hex_to_rgb(value):
