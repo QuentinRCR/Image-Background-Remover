@@ -93,7 +93,7 @@ def get_layout(default_folder_path,default_remove_color,default_add_color,defaul
 
 # Initialize window
 layout = get_layout(get_screenshot_folder(),'#f7f7f7','#ffffff',0,15)
-window = sg.Window("Background Remover", layout)
+window = sg.Window("Background Remover", layout, relative_location=(-200,-50))
 event, values = window.read(timeout=0)  # Initial read to handle default behaviors
 update_image_list() # Populate the image list at startup
 
