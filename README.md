@@ -1,4 +1,4 @@
-# Background Remover - README
+# Background Remover
 
 ## Overview
 
@@ -7,10 +7,10 @@ This Python project provides a simple GUI application that allows users to remov
 ## Prerequisites
 
 Ensure you have the following Python libraries installed:
-
 ```bash
 pip install numpy Pillow FreeSimpleGUI
 ```
+The exact versions are available in `requirements.txt`.
 
 ## Usage Instructions
 
